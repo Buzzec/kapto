@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
+use std::fmt::{Debug, Formatter};
 use std::fmt::Display;
 use std::hash::{Hash, Hasher};
-
-use bitflags::_core::fmt::{Debug, Formatter};
 
 use crate::direction::Directions;
 
@@ -32,12 +31,12 @@ pub struct PieceDefinition {
 }
 impl PieceDefinition {
     pub fn verify(&self) -> PieceDefinitionResult<()> {
-        if self.name.len() == 0 {
-            Err(PieceDefinitionError::NameInvalid(self.name.clone()))
+        if self.name.is_empty() {
+            return Err(PieceDefinitionError::NameInvalid(self.name.clone()));
         }
         self.jump_limit.verify()?;
         self.move_rule.verify()?;
-        Ok(Self)
+        Ok(())
     }
 }
 impl Hash for PieceDefinition {
@@ -143,20 +142,20 @@ pub enum JumpLimit {
         directions: Directions,
     },
     /// Piece cannot jump
-    None,
+    Cannot,
 }
 impl JumpLimit {
     pub fn verify(&self) -> JumpLimitResult<()> {
-        let (directions, limit) = match self {
+        let (&directions, limit) = match self {
             Self::Unlimited { directions } => (directions, None),
             Self::Limited { limit, directions } => (directions, Some(limit)),
-            Self::None => return Ok(()),
+            Self::Cannot => return Ok(()),
         };
-        if directions == Directions::None {
-            Err(JumpLimitError::NoDirectionsSet)
-        } else if let Some(limit) = limit {
+        if directions == Directions::NONE {
+            return Err(JumpLimitError::NoDirectionsSet);
+        } else if let Some(&limit) = limit {
             if limit == 0 {
-                Err(JumpLimitError::LimitedTo0)
+                return Err(JumpLimitError::LimitedTo0);
             }
         }
         Ok(())
@@ -193,22 +192,21 @@ pub enum MoveRule {
 }
 impl MoveRule {
     pub fn verify(&self) -> MoveRuleResult<()> {
-        let (directions, limit) = match self {
+        let (&directions, &limit) = match self {
             Self::SameDirection { limit, directions } => (directions, limit),
-            Self::Limited { limit, directions } => (directions, limit),
+            Self::AnyDirection { limit, directions } => (directions, limit),
             Self::None => return Ok(()),
         };
-        if directions == Directions::None {
-            Err(MoveRuleError::NoDirectionsSet)
-        } else if let Some(limit) = limit {
-            if limit == 0 {
-                Err(MoveRuleError::LimitedTo0)
-            }
+        if directions == Directions::NONE {
+            return Err(MoveRuleError::NoDirectionsSet);
+        }
+        if limit == 0 {
+            return Err(MoveRuleError::LimitedTo0);
         }
         Ok(())
     }
 }
-pub type MoveRuleResult<T> = Result<T, MoveRule>;
+pub type MoveRuleResult<T> = Result<T, MoveRuleError>;
 #[derive(Copy, Clone, Debug)]
 pub enum MoveRuleError {
     NoDirectionsSet,

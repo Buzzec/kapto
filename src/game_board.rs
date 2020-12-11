@@ -6,6 +6,7 @@ use matrix::prelude::Conventional;
 
 use crate::action::{Action, ActionError, ActionType};
 use crate::action::ActionError::PieceOnMove;
+use crate::coordinate::Coordinate;
 use crate::direction::Direction;
 
 #[derive(Clone, Debug)]
@@ -14,7 +15,7 @@ pub struct GameBoard {
 }
 impl GameBoard {
     pub fn new<S: Size>(board_size: S, goal_pos: &[usize]) -> Self {
-        assert!(goal_pos.len() > 0, "Must have at least 1 goal position");
+        assert!(!goal_pos.is_empty(), "Must have at least 1 goal position");
         let rows = board_size.rows() + 2;
         let columns = board_size.columns();
         assert!(rows >= 1, "Rows must be >= 1");
@@ -96,7 +97,7 @@ impl GameBoard {
     pub fn apply_action(
         &self,
         action: &Action,
-        capture_callback: impl Fn((usize, usize), Piece),
+        capture_callback: impl Fn(Coordinate, Piece),
     ) -> Result<GameBoard, ActionError> {
         self.is_valid_action(action)?;
         let mut board = self.clone();
@@ -106,19 +107,19 @@ impl GameBoard {
 
         match &action.action_type {
             ActionType::Move(direction) => {
-                *board.piece_mut(direction.offset(action.start_pos)).unwrap() = Some(piece);
+                *board.piece_mut(direction.offset() + action.start_pos).unwrap() = Some(piece);
             }
             ActionType::Jump(directions) => {
                 let mut position = action.start_pos;
                 for direction in directions {
-                    let middle_pos = direction.offset(position);
+                    let middle_pos = direction.offset() + position;
                     let middle_piece = board.piece_mut(middle_pos).unwrap();
                     if middle_piece.unwrap().color() != piece.color() {
                         capture_callback(middle_pos, middle_piece.unwrap());
                         *middle_piece = None;
                     }
 
-                    position = direction.offset_amount(position, 2);
+                    position = direction.offset() * 2 + position;
                 }
                 *board.piece_mut(position).unwrap() = Some(piece);
             }
@@ -151,10 +152,10 @@ impl GameBoard {
     }
     pub fn is_valid_move(
         &self,
-        start_pos: impl Position,
+        start_pos: Coordinate,
         direction: Direction,
     ) -> Result<(), ActionError> {
-        let new_pos = direction.offset(start_pos);
+        let new_pos = direction.offset() + start_pos;
         match self.piece(new_pos) {
             Ok(piece) => {
                 if let Some(piece) = piece {
@@ -171,8 +172,8 @@ impl GameBoard {
     pub fn is_valid_jump(
         &self,
         piece: Piece,
-        start_pos: (usize, usize),
-        directions: &Vec<Direction>,
+        start_pos: Coordinate,
+        directions: &[Direction],
     ) -> Result<(), ActionError> {
         if directions.is_empty() {
             return Err(ActionError::EmptyJump);
@@ -184,8 +185,8 @@ impl GameBoard {
         let mut prev_positions = Vec::with_capacity(directions.len());
         prev_positions.push(start_pos);
         for direction in directions {
-            let middle_pos = direction.offset(*prev_positions.last().unwrap());
-            let new_pos = direction.offset(middle_pos);
+            let middle_pos = direction.offset() + *prev_positions.last().unwrap();
+            let new_pos = direction.offset() + middle_pos;
             if let Some(piece) = match self.piece(new_pos) {
                 Ok(piece) => piece,
                 Err(error) => {
@@ -201,7 +202,7 @@ impl GameBoard {
             }
             prev_positions.push(new_pos);
 
-            if let None = self.piece(middle_pos).unwrap() {
+            if self.piece(middle_pos).unwrap().is_none() {
                 return Err(ActionError::NoPieceJumped);
             }
         }
@@ -242,21 +243,21 @@ pub enum Piece {
 }
 impl Piece {
     pub fn color(&self) -> Color {
-        return match self {
+        match self {
             Piece::SmallRed => Color::Red,
             Piece::LargeRed => Color::Red,
             Piece::SmallBlue => Color::Blue,
             Piece::LargeBlue => Color::Blue,
-        };
+        }
     }
 
     pub fn size(&self) -> PieceSize {
-        return match self {
+        match self {
             Piece::SmallRed => PieceSize::Small,
             Piece::LargeRed => PieceSize::Large,
             Piece::SmallBlue => PieceSize::Small,
             Piece::LargeBlue => PieceSize::Large,
-        };
+        }
     }
 }
 
@@ -273,17 +274,11 @@ pub enum PieceSize {
 }
 impl PieceSize {
     pub fn is_small(&self) -> bool {
-        match self {
-            PieceSize::Small => true,
-            _ => false,
-        }
+        matches!(self, PieceSize::Small)
     }
 
     pub fn is_large(&self) -> bool {
-        match self {
-            PieceSize::Large => true,
-            _ => false,
-        }
+        matches!(self, PieceSize::Large)
     }
 }
 

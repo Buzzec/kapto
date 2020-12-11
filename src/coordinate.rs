@@ -1,7 +1,9 @@
 use std::ops::{Add, AddAssign, Mul, Sub, SubAssign};
+use std::ops::MulAssign;
 
-use bitflags::_core::ops::MulAssign;
 use matrix::Position;
+
+use crate::ruleset::board_type::BoardType;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Coordinate {
@@ -64,4 +66,11 @@ impl MulAssign<i16> for Coordinate {
         self.row *= rhs;
         self.column *= rhs;
     }
+}
+
+pub fn flip_coordinate(board: &BoardType, coordinate: Coordinate) -> Coordinate {
+    Coordinate::new(board.rows() as i16 - coordinate.row - 1, coordinate.column)
+}
+pub fn rotate_coordinate(board: &BoardType, coordinate: Coordinate) -> Coordinate {
+    Coordinate::new(board.rows() as i16 - coordinate.row - 1, board.columns() as i16 - coordinate.column - 1)
 }

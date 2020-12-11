@@ -5,18 +5,22 @@ use core::result::Result::{Err, Ok};
 use core::result::Result;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::hash::{Hash, Hasher};
-use std::mem::discriminant;
+
+use enum_iterator::IntoEnumIterator;
 
 use placement_area::PlacementArea;
 
-use crate::coordinate::Coordinate;
+use crate::coordinate::{Coordinate, flip_coordinate, rotate_coordinate};
 use crate::game_board::Color;
-use crate::ruleset::{BoardType, flip_coordinate, rotate_coordinate, Ruleset, Space};
+use crate::ruleset::{BoardType, Ruleset};
+use crate::ruleset::board_type::space::Space;
 use crate::ruleset::piece_definition::PieceDefinition;
-use crate::ruleset::starting_positions::alteration_type::AlternationType;
+use crate::ruleset::starting_positions::alteration_type::{AlterationTypeError, AlternationType};
+use crate::ruleset::starting_positions::piece_limit::{PieceLimit, PieceLimitError};
+use crate::ruleset::starting_positions::placement_area::PlacementAreaError;
 
 pub mod alteration_type;
+pub mod piece_limit;
 pub mod placement_area;
 
 /// Defines the starting positions
@@ -43,7 +47,7 @@ pub enum StartingPositions {
         /// The valid placement area.
         placement_area: PlacementArea,
         /// The limitations on piece placement.
-        piece_limits: HashSet<PieceLimits>,
+        piece_limits: HashSet<PieceLimit>,
     },
 }
 impl StartingPositions {
@@ -74,7 +78,7 @@ impl StartingPositions {
                         });
                     }
                 }
-                match board.get_space(flip_coordinate(board, position.1)) {
+                match board.get_space(flip_coordinate(board, position)) {
                     Space::Normal => {}
                     space => {
                         return Err(StartingPositionsError::InvalidPositionForBoard {
@@ -115,7 +119,7 @@ impl StartingPositions {
                         });
                     }
                 }
-                match board.get_space(rotate_coordinate(board, position.1)) {
+                match board.get_space(rotate_coordinate(board, position)) {
                     Space::Normal => {}
                     space => {
                         return Err(StartingPositionsError::InvalidPositionForBoard {
@@ -166,9 +170,14 @@ impl StartingPositions {
         }
         Ok(())
     }
-    fn verify_placement(first_color: Color, alternation_type: AlternationType, placement_area: &PlacementArea, piece_limits: &HashSet<PieceLimits>, board: &BoardType, ruleset: &Ruleset) -> Result<(), StartingPositionsError> {}
+    fn verify_placement(_: Color, alternation_type: AlternationType, placement_area: &PlacementArea, piece_limits: &HashSet<PieceLimit>, board: &BoardType, ruleset: &Ruleset) -> Result<(), StartingPositionsError> {
+        alternation_type.verify(piece_limits)?;
+        placement_area.verify(board)?;
+        PieceLimit::verify(piece_limits, ruleset)?;
+        Ok(())
+    }
 
-    fn verify(&self, board: &BoardType, ruleset: &Ruleset) -> StartingPositionsResult<()> {
+    pub fn verify(&self, board: &BoardType, ruleset: &Ruleset) -> StartingPositionsResult<()> {
         match self {
             StartingPositions::MirroredFlipped(self_data) => {
                 Self::verify_mirrored_flipped(self_data, board, ruleset)
@@ -195,8 +204,9 @@ impl StartingPositions {
         }
     }
 }
+
 pub type StartingPositionsResult<T> = Result<T, StartingPositionsError>;
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug)]
 pub enum StartingPositionsError {
     /// Color was not set
     ColorNotFound(Color),
@@ -213,72 +223,40 @@ pub enum StartingPositionsError {
         piece: PieceDefinition,
         position: Coordinate,
     },
+    AlterationTypeError(AlterationTypeError),
+    PlacementAreaError(PlacementAreaError),
+    PieceLimitError(PieceLimitError),
 }
 impl Display for StartingPositionsError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         <Self as Debug>::fmt(self, f)
     }
 }
-impl Error for StartingPositionsError {}
-
-/// Limits for piece placement.
-///
-/// Hash, Eq, PartialEq are defined for the discriminant.
-#[derive(Clone, Debug)]
-pub enum PieceLimits {
-    /// Limit to the total count of pieces.
-    TotalLimit { limit: usize },
-    /// Limit to each type of piece.
-    TypeCountLimit {
-        /// Limits not set for a piece will be infinite.
-        /// Maps from pieces index to limit
-        limits: HashMap<usize, usize>,
-    },
-    /// Limit by point count and total points available.
-    PointLimit {
-        /// Must be set for all pieces.
-        /// Maps from pieces index to points value
-        point_values: HashMap<usize, usize>,
-        /// The total limit for each side.
-        point_limit: usize,
-    },
-}
-impl<'a> Verifiable for PieceLimits<'a> {
-    type Input = HashSet<&'a PieceDefinition>;
-    type Error = PieceLimitsVerifyError<'a>;
-
-    fn verify(&self, input: Self::Input) -> Result<(), Self::Error> {
+impl Error for StartingPositionsError {
+    fn cause(&self) -> Option<&dyn Error> {
         match self {
-            Self::PointLimit { point_values, point_limit: _ } => {
-                for definition in input {
-                    if !point_values.contains_key(definition) {
-                        return Err(PieceLimitsVerifyError::PieceHasNoPointValue(definition));
-                    }
-                }
-                Ok(())
-            }
-            _ => Ok(()),
+            StartingPositionsError::ColorNotFound(_) => None,
+            StartingPositionsError::PieceIndexNotFound(_) => None,
+            StartingPositionsError::DuplicatePosition { .. } => None,
+            StartingPositionsError::InvalidPositionForBoard { .. } => None,
+            StartingPositionsError::AlterationTypeError(error) => Some(error),
+            StartingPositionsError::PlacementAreaError(error) => Some(error),
+            StartingPositionsError::PieceLimitError(error) => Some(error),
         }
     }
 }
-impl<'a> Hash for PieceLimits<'a> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        discriminant(self).hash(state);
+impl From<AlterationTypeError> for StartingPositionsError {
+    fn from(from: AlterationTypeError) -> Self {
+        Self::AlterationTypeError(from)
     }
 }
-impl<'a> PartialEq for PieceLimits<'a> {
-    fn eq(&self, other: &Self) -> bool {
-        discriminant(self).eq(&discriminant(other))
+impl From<PlacementAreaError> for StartingPositionsError {
+    fn from(from: PlacementAreaError) -> Self {
+        Self::PlacementAreaError(from)
     }
 }
-impl<'a> Eq for PieceLimits<'a> {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub enum PieceLimitsVerifyError<'a> {
-    PieceHasNoPointValue(&'a PieceDefinition),
-}
-impl<'a> Display for PieceLimitsVerifyError<'a> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        <Self as Debug>::fmt(self, f)
+impl From<PieceLimitError> for StartingPositionsError {
+    fn from(from: PieceLimitError) -> Self {
+        Self::PieceLimitError(from)
     }
 }
-impl<'a> Error for PieceLimitsVerifyError<'a> {}

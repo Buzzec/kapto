@@ -1,3 +1,11 @@
+use std::collections::HashSet;
+use std::error::Error;
+use std::fmt::{Debug, Formatter};
+use std::fmt;
+use std::fmt::Display;
+
+use crate::ruleset::starting_positions::piece_limit::PieceLimit;
+
 /// The alteration for placement
 #[derive(Copy, Clone, Debug)]
 pub enum AlternationType {
@@ -13,6 +21,7 @@ pub enum AlternationType {
         hard_limit: bool,
     },
     /// The player with the lowest total points places, first color places on ties.
+    /// Must have points limit set
     Points,
     /// Players place their whole side on their turn.
     WholePlacement,
@@ -20,24 +29,36 @@ pub enum AlternationType {
     Hidden,
 }
 impl AlternationType {
-    pub fn verify(&self, piece_limits: &HashSet<PieceLimits>) -> AlterationTypeResult<()> {
+    pub fn verify(&self, piece_limits: &HashSet<PieceLimit>) -> AlterationTypeResult<()> {
         match self {
-            AlternationType::TurnsCount { per_turn_count } => if per_turn_count == 0 {
+            AlternationType::TurnsCount { per_turn_count } => if *per_turn_count == 0 {
                 return Err(AlterationTypeError::CountIs0);
             },
-            AlternationType::TurnsPoints { per_turn_points, hard_limit: _ } => {
-                if per_turn_points == 0 {
-                    return Err(AlterationTypeError::PointsIs0);
+            AlternationType::TurnsPoints { .. } | AlternationType::Points => {
+                if let AlternationType::TurnsPoints { per_turn_points, hard_limit: _ } = self {
+                    if *per_turn_points == 0 {
+                        return Err(AlterationTypeError::PerTurnPointsIs0);
+                    }
                 }
-                if piece_limits.contains(PieceLimits::)
-            }
-            _ => {}
+                if !piece_limits.contains(&PieceLimit::PointLimit { point_values: Default::default(), point_limit: Default::default() }) {
+                    return Err(AlterationTypeError::NoPointLimitForTurnsPoints);
+                }
+            },
+            AlternationType::WholePlacement | AlternationType::Hidden => {},
         }
         Ok(())
     }
 }
 pub type AlterationTypeResult<T> = Result<T, AlterationTypeError>;
+#[derive(Copy, Clone, Debug)]
 pub enum AlterationTypeError {
     CountIs0,
-    PointsIs0,
+    PerTurnPointsIs0,
+    NoPointLimitForTurnsPoints,
 }
+impl Display for AlterationTypeError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        <Self as Debug>::fmt(self, f)
+    }
+}
+impl Error for AlterationTypeError {}

@@ -1,8 +1,9 @@
+use crate::coordinate::Coordinate;
 use crate::direction::Direction;
 use crate::game_board::Piece;
 
 pub struct Action {
-    pub start_pos: (usize, usize),
+    pub start_pos: Coordinate,
     pub action_type: ActionType,
 }
 

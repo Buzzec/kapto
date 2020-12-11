@@ -1,50 +1,50 @@
 use std::collections::HashSet;
+use std::hash::Hash;
 
-use bitflags::_core::hash::Hash;
 use bitflags::bitflags;
 
 use crate::coordinate::Coordinate;
 
 bitflags! {
     pub struct Directions: u8 {
-        const North     = 0b00000001;
-        const South     = 0b00000010;
-        const East      = 0b00000100;
-        const West      = 0b00001000;
-        const NorthWest = 0b00010000;
-        const NorthEast = 0b00100000;
-        const SouthWest = 0b01000000;
-        const SouthEast = 0b10000000;
-        const Cardinal  = Self::North.bits | Self::South.bits | Self::East.bits | Self::West.bits;
-        const Diagonal  = Self::NorthWest.bits | Self::NorthEast.bits | Self::SouthWest.bits | Self::SouthEast.bits;
-        const All       = Self::Cardinal.bits | Self::Diagonal.bits;
-        const None      = 0b00000000;
+        const NORTH         = 0b00000001;
+        const SOUTH         = 0b00000010;
+        const EAST          = 0b00000100;
+        const WEST          = 0b00001000;
+        const NORTH_WEST    = 0b00010000;
+        const NORTH_EAST    = 0b00100000;
+        const SOUTH_WEST    = 0b01000000;
+        const SOUTH_EAST    = 0b10000000;
+        const CARDINAL      = Self::NORTH.bits | Self::SOUTH.bits | Self::EAST.bits | Self::WEST.bits;
+        const DIAGONAL      = Self::NORTH_WEST.bits | Self::NORTH_EAST.bits | Self::SOUTH_WEST.bits | Self::SOUTH_EAST.bits;
+        const ALL           = Self::CARDINAL.bits | Self::DIAGONAL.bits;
+        const NONE          = 0b00000000;
     }
 }
 impl From<Direction> for Directions {
     fn from(from: Direction) -> Self {
         match from {
-            Direction::North => Self::North,
-            Direction::South => Self::South,
-            Direction::East => Self::East,
-            Direction::West => Self::West,
-            Direction::NorthWest => Self::NorthWest,
-            Direction::NorthEast => Self::NorthEast,
-            Direction::SouthWest => Self::SouthWest,
-            Direction::SouthEast => Self::SouthEast,
+            Direction::North => Self::NORTH,
+            Direction::South => Self::SOUTH,
+            Direction::East => Self::EAST,
+            Direction::West => Self::WEST,
+            Direction::NorthWest => Self::NORTH_WEST,
+            Direction::NorthEast => Self::NORTH_EAST,
+            Direction::SouthWest => Self::SOUTH_WEST,
+            Direction::SouthEast => Self::SOUTH_EAST,
         }
     }
 }
 impl Directions {
-    fn run_for_all(self, function: impl Fn(Direction)) {
-        if self.contains(Directions::North) { function(Direction::North); }
-        if self.contains(Directions::South) { function(Direction::South); }
-        if self.contains(Directions::East) { function(Direction::East); }
-        if self.contains(Directions::West) { function(Direction::West); }
-        if self.contains(Directions::NorthWest) { function(Direction::NorthWest); }
-        if self.contains(Directions::NorthEast) { function(Direction::NorthEast); }
-        if self.contains(Directions::SouthWest) { function(Direction::SouthWest); }
-        if self.contains(Directions::SouthEast) { function(Direction::SouthEast); }
+    fn run_for_all(self, mut function: impl FnMut(Direction)) {
+        if self.contains(Directions::NORTH) { function(Direction::North); }
+        if self.contains(Directions::SOUTH) { function(Direction::South); }
+        if self.contains(Directions::EAST) { function(Direction::East); }
+        if self.contains(Directions::WEST) { function(Direction::West); }
+        if self.contains(Directions::NORTH_WEST) { function(Direction::NorthWest); }
+        if self.contains(Directions::NORTH_EAST) { function(Direction::NorthEast); }
+        if self.contains(Directions::SOUTH_WEST) { function(Direction::SouthWest); }
+        if self.contains(Directions::SOUTH_EAST) { function(Direction::SouthEast); }
     }
 }
 
