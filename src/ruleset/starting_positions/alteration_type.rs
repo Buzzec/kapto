@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 use std::error::Error;
-use std::fmt::{Debug, Formatter};
 use std::fmt;
 use std::fmt::Display;
+use std::fmt::{Debug, Formatter};
 
 use crate::ruleset::starting_positions::piece_limit::PieceLimit;
 
@@ -12,7 +12,7 @@ pub enum AlternationType {
     /// Players alternate placing per_turn_count pieces.
     TurnsCount {
         /// Must be > 0
-        per_turn_count: usize
+        per_turn_count: usize,
     },
     /// Players alternate placing per_turn_points points.
     /// Requires piece_limits to contain a point limit.
@@ -31,20 +31,29 @@ pub enum AlternationType {
 impl AlternationType {
     pub fn verify(&self, piece_limits: &HashSet<PieceLimit>) -> AlterationTypeResult<()> {
         match self {
-            AlternationType::TurnsCount { per_turn_count } => if *per_turn_count == 0 {
-                return Err(AlterationTypeError::CountIs0);
-            },
+            AlternationType::TurnsCount { per_turn_count } => {
+                if *per_turn_count == 0 {
+                    return Err(AlterationTypeError::CountIs0);
+                }
+            }
             AlternationType::TurnsPoints { .. } | AlternationType::Points => {
-                if let AlternationType::TurnsPoints { per_turn_points, hard_limit: _ } = self {
+                if let AlternationType::TurnsPoints {
+                    per_turn_points,
+                    hard_limit: _,
+                } = self
+                {
                     if *per_turn_points == 0 {
                         return Err(AlterationTypeError::PerTurnPointsIs0);
                     }
                 }
-                if !piece_limits.contains(&PieceLimit::PointLimit { point_values: Default::default(), point_limit: Default::default() }) {
+                if !piece_limits.contains(&PieceLimit::PointLimit {
+                    point_values: Default::default(),
+                    point_limit: Default::default(),
+                }) {
                     return Err(AlterationTypeError::NoPointLimitForTurnsPoints);
                 }
-            },
-            AlternationType::WholePlacement | AlternationType::Hidden => {},
+            }
+            AlternationType::WholePlacement | AlternationType::Hidden => {}
         }
         Ok(())
     }

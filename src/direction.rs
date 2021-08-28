@@ -37,14 +37,30 @@ impl From<Direction> for Directions {
 }
 impl Directions {
     fn run_for_all(self, mut function: impl FnMut(Direction)) {
-        if self.contains(Directions::NORTH) { function(Direction::North); }
-        if self.contains(Directions::SOUTH) { function(Direction::South); }
-        if self.contains(Directions::EAST) { function(Direction::East); }
-        if self.contains(Directions::WEST) { function(Direction::West); }
-        if self.contains(Directions::NORTH_WEST) { function(Direction::NorthWest); }
-        if self.contains(Directions::NORTH_EAST) { function(Direction::NorthEast); }
-        if self.contains(Directions::SOUTH_WEST) { function(Direction::SouthWest); }
-        if self.contains(Directions::SOUTH_EAST) { function(Direction::SouthEast); }
+        if self.contains(Directions::NORTH) {
+            function(Direction::North);
+        }
+        if self.contains(Directions::SOUTH) {
+            function(Direction::South);
+        }
+        if self.contains(Directions::EAST) {
+            function(Direction::East);
+        }
+        if self.contains(Directions::WEST) {
+            function(Direction::West);
+        }
+        if self.contains(Directions::NORTH_WEST) {
+            function(Direction::NorthWest);
+        }
+        if self.contains(Directions::NORTH_EAST) {
+            function(Direction::NorthEast);
+        }
+        if self.contains(Directions::SOUTH_WEST) {
+            function(Direction::SouthWest);
+        }
+        if self.contains(Directions::SOUTH_EAST) {
+            function(Direction::SouthEast);
+        }
     }
 }
 

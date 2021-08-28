@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
-use std::fmt::{Debug, Formatter};
 use std::fmt::Display;
+use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 
 use crate::direction::Directions;
@@ -133,9 +133,7 @@ pub enum CaptureRequirement {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum JumpLimit {
     /// Piece can jump an unlimited number of times
-    Unlimited {
-        directions: Directions,
-    },
+    Unlimited { directions: Directions },
     /// Piece can jump a limited number of times
     Limited {
         limit: usize,

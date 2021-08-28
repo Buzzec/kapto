@@ -1,8 +1,8 @@
-use core::fmt::{Debug, Display, Formatter};
 use core::fmt;
+use core::fmt::{Debug, Display, Formatter};
 use core::option::Option::{None, Some};
-use core::result::Result::{Err, Ok};
 use core::result::Result;
+use core::result::Result::{Err, Ok};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 
@@ -10,14 +10,14 @@ use enum_iterator::IntoEnumIterator;
 
 use placement_area::PlacementArea;
 
-use crate::coordinate::{Coordinate, flip_coordinate, rotate_coordinate};
+use crate::coordinate::{flip_coordinate, rotate_coordinate, Coordinate};
 use crate::game_board::Color;
-use crate::ruleset::{BoardType, Ruleset};
 use crate::ruleset::board_type::space::Space;
 use crate::ruleset::piece_definition::PieceDefinition;
 use crate::ruleset::starting_positions::alteration_type::{AlterationTypeError, AlternationType};
 use crate::ruleset::starting_positions::piece_limit::{PieceLimit, PieceLimitError};
 use crate::ruleset::starting_positions::placement_area::PlacementAreaError;
+use crate::ruleset::{BoardType, Ruleset};
 
 pub mod alteration_type;
 pub mod piece_limit;
@@ -51,7 +51,11 @@ pub enum StartingPositions {
     },
 }
 impl StartingPositions {
-    fn verify_mirrored_flipped(piece_positions: &HashMap<usize, Vec<Coordinate>>, board: &BoardType, ruleset: &Ruleset) -> StartingPositionsResult<()> {
+    fn verify_mirrored_flipped(
+        piece_positions: &HashMap<usize, Vec<Coordinate>>,
+        board: &BoardType,
+        ruleset: &Ruleset,
+    ) -> StartingPositionsResult<()> {
         // Tracks already used positions
         let mut found = HashSet::new();
         for (&piece_index, positions) in piece_positions {
@@ -92,7 +96,11 @@ impl StartingPositions {
         }
         Ok(())
     }
-    fn verify_mirrored_rotated(piece_positions: &HashMap<usize, Vec<Coordinate>>, board: &BoardType, ruleset: &Ruleset) -> StartingPositionsResult<()> {
+    fn verify_mirrored_rotated(
+        piece_positions: &HashMap<usize, Vec<Coordinate>>,
+        board: &BoardType,
+        ruleset: &Ruleset,
+    ) -> StartingPositionsResult<()> {
         // Tracks already used positions
         let mut found = HashSet::new();
         for (&piece_index, positions) in piece_positions {
@@ -133,7 +141,11 @@ impl StartingPositions {
         }
         Ok(())
     }
-    fn verify_not_mirrored(color_piece_positions: &HashMap<Color, HashMap<usize, Vec<Coordinate>>>, input: &BoardType, ruleset: &Ruleset) -> StartingPositionsResult<()> {
+    fn verify_not_mirrored(
+        color_piece_positions: &HashMap<Color, HashMap<usize, Vec<Coordinate>>>,
+        input: &BoardType,
+        ruleset: &Ruleset,
+    ) -> StartingPositionsResult<()> {
         // Tracks already used positions
         let mut found = HashSet::new();
         for color in Color::into_enum_iter() {
@@ -170,7 +182,14 @@ impl StartingPositions {
         }
         Ok(())
     }
-    fn verify_placement(_: Color, alternation_type: AlternationType, placement_area: &PlacementArea, piece_limits: &HashSet<PieceLimit>, board: &BoardType, ruleset: &Ruleset) -> Result<(), StartingPositionsError> {
+    fn verify_placement(
+        _: Color,
+        alternation_type: AlternationType,
+        placement_area: &PlacementArea,
+        piece_limits: &HashSet<PieceLimit>,
+        board: &BoardType,
+        ruleset: &Ruleset,
+    ) -> Result<(), StartingPositionsError> {
         alternation_type.verify(piece_limits)?;
         placement_area.verify(board)?;
         PieceLimit::verify(piece_limits, ruleset)?;

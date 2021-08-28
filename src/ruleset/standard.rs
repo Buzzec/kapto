@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 
 use crate::direction::Directions;
-use crate::ruleset::{BoardType, Ruleset, RulesetResult};
-use crate::ruleset::piece_definition::{CaptureRequirement, CaptureRule, CaptureTarget, CaptureTimingRule, GoalMovementRule, JumpLimit, JumpRule, MoveRule, PieceDefinition};
+use crate::ruleset::piece_definition::{
+    CaptureRequirement, CaptureRule, CaptureTarget, CaptureTimingRule, GoalMovementRule, JumpLimit,
+    JumpRule, MoveRule, PieceDefinition,
+};
 use crate::ruleset::starting_positions::StartingPositions;
+use crate::ruleset::{BoardType, Ruleset, RulesetResult};
 
 pub fn standard_rules() -> RulesetResult<Ruleset> {
     let out = Ruleset {
@@ -17,15 +20,22 @@ pub fn standard_rules() -> RulesetResult<Ruleset> {
 }
 
 fn get_pieces() -> Vec<PieceDefinition> {
-    let capture_rules: HashMap<_, _> = vec![(CaptureRule::JumpOver, CaptureTarget::EnemyOnly)].into_iter().collect();
+    let capture_rules: HashMap<_, _> = vec![(CaptureRule::JumpOver, CaptureTarget::EnemyOnly)]
+        .into_iter()
+        .collect();
     let big = PieceDefinition {
         name: "Big".to_string(),
         capture_rules: capture_rules.clone(),
         jump_rule: JumpRule::NoSameStart,
         capture_timing_rule: CaptureTimingRule::AfterTurn,
         capture_requirement: CaptureRequirement::Forced(10),
-        jump_limit: JumpLimit::Unlimited { directions: Directions::ALL },
-        move_rule: MoveRule::AnyDirection { limit: 1, directions: Directions::ALL },
+        jump_limit: JumpLimit::Unlimited {
+            directions: Directions::ALL,
+        },
+        move_rule: MoveRule::AnyDirection {
+            limit: 1,
+            directions: Directions::ALL,
+        },
         goal_move_rule: GoalMovementRule::Free,
     };
 
@@ -35,8 +45,14 @@ fn get_pieces() -> Vec<PieceDefinition> {
         jump_rule: JumpRule::NoSameStart,
         capture_timing_rule: CaptureTimingRule::AfterTurn,
         capture_requirement: CaptureRequirement::Forced(10),
-        jump_limit: JumpLimit::Limited { limit: 1, directions: Directions::ALL },
-        move_rule: MoveRule::AnyDirection { limit: 1, directions: Directions::ALL },
+        jump_limit: JumpLimit::Limited {
+            limit: 1,
+            directions: Directions::ALL,
+        },
+        move_rule: MoveRule::AnyDirection {
+            limit: 1,
+            directions: Directions::ALL,
+        },
         goal_move_rule: GoalMovementRule::Free,
     };
 
@@ -46,7 +62,7 @@ fn get_board() -> BoardType {
     BoardType::Rectangular {
         rows: 10,
         columns: 10,
-        goal_locations: vec![4, 5],
+        goal_locations: [4, 5].iter().cloned().collect(),
     }
 }
 fn get_starting_positions() -> StartingPositions {

@@ -1,6 +1,6 @@
 use core::cmp::{Eq, PartialEq};
-use core::fmt::{Debug, Display, Formatter};
 use core::fmt;
+use core::fmt::{Debug, Display, Formatter};
 use core::hash::{Hash, Hasher};
 use core::mem::discriminant;
 use core::result::Result;
@@ -9,8 +9,8 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 
 use crate::ruleset::piece_definition::PieceDefinition;
-use crate::ruleset::Ruleset;
 use crate::ruleset::starting_positions::piece_limit::PieceLimitError::PieceHasNoPointValue;
+use crate::ruleset::Ruleset;
 
 /// Limits for piece placement.
 ///
@@ -18,9 +18,7 @@ use crate::ruleset::starting_positions::piece_limit::PieceLimitError::PieceHasNo
 #[derive(Clone, Debug)]
 pub enum PieceLimit {
     /// Limit to the total count of pieces.
-    TotalLimit {
-        limit: usize,
-    },
+    TotalLimit { limit: usize },
     /// Limit to each type of piece.
     TypeCountLimit {
         /// Limits not set for a piece will be infinite.
@@ -40,24 +38,37 @@ impl PieceLimit {
     pub fn verify(self_set: &HashSet<Self>, ruleset: &Ruleset) -> PieceLimitResult<()> {
         for piece_limit in self_set {
             match piece_limit {
-                PieceLimit::TotalLimit { limit } => if *limit == 0 {
-                    return Err(PieceLimitError::LimitIs0);
-                },
-                PieceLimit::TypeCountLimit { limits } => for (&piece_index, &limit) in limits {
-                    let piece = match ruleset.get_piece(piece_index) {
-                        None => return Err(PieceLimitError::PieceIndexNotFound(piece_index)),
-                        Some(piece) => piece,
-                    };
-                    if limit == 0 {
-                        return Err(PieceLimitError::LimitIs0ForPiece(piece.clone()));
+                PieceLimit::TotalLimit { limit } => {
+                    if *limit == 0 {
+                        return Err(PieceLimitError::LimitIs0);
                     }
-                },
-                PieceLimit::PointLimit { point_values, point_limit: _ } => {
+                }
+                PieceLimit::TypeCountLimit { limits } => {
+                    for (&piece_index, &limit) in limits {
+                        let piece = match ruleset.get_piece(piece_index) {
+                            None => return Err(PieceLimitError::PieceIndexNotFound(piece_index)),
+                            Some(piece) => piece,
+                        };
+                        if limit == 0 {
+                            return Err(PieceLimitError::LimitIs0ForPiece(piece.clone()));
+                        }
+                    }
+                }
+                PieceLimit::PointLimit {
+                    point_values,
+                    point_limit: _,
+                } => {
                     for (piece_index, definition) in ruleset.pieces.iter().enumerate() {
                         match point_values.get(&piece_index) {
-                            None => return Err(PieceLimitError::PieceHasNoPointValue(definition.clone())),
-                            Some(points) => if *points == 0 {
-                                return Err(PieceHasNoPointValue(definition.clone()));
+                            None => {
+                                return Err(PieceLimitError::PieceHasNoPointValue(
+                                    definition.clone(),
+                                ))
+                            }
+                            Some(points) => {
+                                if *points == 0 {
+                                    return Err(PieceHasNoPointValue(definition.clone()));
+                                }
                             }
                         }
                     }

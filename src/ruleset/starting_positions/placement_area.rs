@@ -1,14 +1,14 @@
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::fmt::{Debug, Display, Formatter};
 use std::fmt;
+use std::fmt::{Debug, Display, Formatter};
 
 use enum_iterator::IntoEnumIterator;
 
-use crate::coordinate::{Coordinate, flip_coordinate, rotate_coordinate};
+use crate::coordinate::{flip_coordinate, rotate_coordinate, Coordinate};
 use crate::game_board::Color;
-use crate::ruleset::board_type::BoardType;
 use crate::ruleset::board_type::space::Space;
+use crate::ruleset::board_type::BoardType;
 
 /// Placement area definition.
 #[derive(Clone, Debug)]
@@ -30,20 +30,31 @@ pub enum PlacementArea {
 impl PlacementArea {
     pub fn verify(&self, board: &BoardType) -> PlacementAreaResult<()> {
         match self {
-            Self::Half => {},
+            Self::Half => {}
             Self::MirroredFlipped(positions) | Self::MirroredRotated(positions) => {
-                let func = if let Self::MirroredFlipped(_) = self { flip_coordinate } else { rotate_coordinate };
+                let func = if let Self::MirroredFlipped(_) = self {
+                    flip_coordinate
+                } else {
+                    rotate_coordinate
+                };
                 let mut found = positions.clone();
                 for &position in positions {
-                    if position.row < 0 || position.row >= board.rows() as i16 || position.column < 0 || position.column >= board.columns() as i16 {
-                        return Err(PlacementAreaError::PositionCannotPlace(Space::Invalid, position))
+                    if position.row < 0
+                        || position.row >= board.rows() as i16
+                        || position.column < 0
+                        || position.column >= board.columns() as i16
+                    {
+                        return Err(PlacementAreaError::PositionCannotPlace(
+                            Space::Invalid,
+                            position,
+                        ));
                     }
                     let opposite = func(board, position);
                     if !found.insert(position) || found.insert(opposite) {
                         return Err(PlacementAreaError::PositionCollision(position));
                     }
                 }
-            },
+            }
             Self::NonMirrored(color_map) => {
                 let mut found = HashSet::new();
                 for color in Color::into_enum_iter() {
@@ -57,7 +68,7 @@ impl PlacementArea {
                         }
                     }
                 }
-            },
+            }
         }
         Ok(())
     }

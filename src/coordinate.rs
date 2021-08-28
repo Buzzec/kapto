@@ -1,5 +1,5 @@
-use std::ops::{Add, AddAssign, Mul, Sub, SubAssign};
 use std::ops::MulAssign;
+use std::ops::{Add, AddAssign, Mul, Sub, SubAssign};
 
 use matrix::Position;
 
@@ -72,5 +72,8 @@ pub fn flip_coordinate(board: &BoardType, coordinate: Coordinate) -> Coordinate 
     Coordinate::new(board.rows() as i16 - coordinate.row - 1, coordinate.column)
 }
 pub fn rotate_coordinate(board: &BoardType, coordinate: Coordinate) -> Coordinate {
-    Coordinate::new(board.rows() as i16 - coordinate.row - 1, board.columns() as i16 - coordinate.column - 1)
+    Coordinate::new(
+        board.rows() as i16 - coordinate.row - 1,
+        board.columns() as i16 - coordinate.column - 1,
+    )
 }

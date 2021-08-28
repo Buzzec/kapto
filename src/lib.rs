@@ -1,3 +1,5 @@
+#![warn(missing_debug_implementations)]
+
 pub mod action;
 pub mod coordinate;
 pub mod direction;

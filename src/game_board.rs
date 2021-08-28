@@ -1,11 +1,11 @@
 use std::ops::{Index, IndexMut};
 
 use enum_iterator::IntoEnumIterator;
-use matrix::{Element, Position, Size};
 use matrix::prelude::Conventional;
+use matrix::{Element, Position, Size};
 
-use crate::action::{Action, ActionError, ActionType};
 use crate::action::ActionError::PieceOnMove;
+use crate::action::{Action, ActionError, ActionType};
 use crate::coordinate::Coordinate;
 use crate::direction::Direction;
 
@@ -107,7 +107,9 @@ impl GameBoard {
 
         match &action.action_type {
             ActionType::Move(direction) => {
-                *board.piece_mut(direction.offset() + action.start_pos).unwrap() = Some(piece);
+                *board
+                    .piece_mut(direction.offset() + action.start_pos)
+                    .unwrap() = Some(piece);
             }
             ActionType::Jump(directions) => {
                 let mut position = action.start_pos;

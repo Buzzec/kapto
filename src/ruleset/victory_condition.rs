@@ -2,8 +2,8 @@ use core::cmp::{Eq, PartialEq};
 use core::hash::{Hash, Hasher};
 use core::mem::discriminant;
 use std::error::Error;
-use std::fmt::{Debug, Display, Formatter};
 use std::fmt;
+use std::fmt::{Debug, Display, Formatter};
 use std::vec::Vec;
 
 use crate::ruleset::Ruleset;
@@ -29,7 +29,10 @@ pub enum VictoryCondition {
 impl VictoryCondition {
     pub fn verify(&self, ruleset: &Ruleset) -> VictoryConditionResult<()> {
         match self {
-            VictoryCondition::GoalCount { amount, valid_pieces } => {
+            VictoryCondition::GoalCount {
+                amount,
+                valid_pieces,
+            } => {
                 if *amount == 0 {
                     return Err(VictoryConditionError::AmountIs0);
                 }
@@ -47,8 +50,10 @@ impl VictoryCondition {
                 }
             }
             VictoryCondition::AllCaptured => {}
-            VictoryCondition::PointDifference(difference) => if *difference == 0 {
-                return Err(VictoryConditionError::PointDifferenceIs0);
+            VictoryCondition::PointDifference(difference) => {
+                if *difference == 0 {
+                    return Err(VictoryConditionError::PointDifferenceIs0);
+                }
             }
         }
         Ok(())
